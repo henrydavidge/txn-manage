@@ -105,6 +105,8 @@ class Txn {
 
   // Start time (used for OCC and MVCC).
   double occ_start_time_;
+
+  bool validated;
 };
 
 #endif  // _TXN_H_
