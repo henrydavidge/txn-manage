@@ -1,0 +1,11 @@
+2. This is a good approximation of the transaction costs in real systems from a timing perspective since it actually models one transaction running for some specified unit of time and using up certain resources (threads from the thread pool, locks from the lock manager, etc.)
+This is not a good approximation because the thread sleep times are clustered around 4 different sleep times, each 10 times the last. This is not mirrored by real world systems which would have a more continuous distribution of thread run times.
+A better approximation would be if the thread sleep-times were to be normally distributed around a mean value, and if the means and the standard deviations were to be changed for various test cases.
+
+3. 
+
+4. The Serial Optimistic Concurrency Control (OCC) performs better than the Parallel OCC when the average transaction duration is low (i.e., less than 10 ms). For longer transaction durations (~100 ms), the parallel OCC performs slightly better than the serial version.
+This was perhaps because of the higher overhead in storing the active sets, copying the active set for each transaction to be validated and in performing multiple passes over the active sets to determine whether there were any conflicts between different transactions. Also, transactions just sit around in the queue needlessly populating the active set while waiting to get committed. This decreases the throughput. Ain’t nobody got time for that. We can test this by increasing n and noting the increase in throughput of POCC.
+This was unexpected as we expected the parallel version to outperform the serial version.
+In a real world system with a high volume of long duration transactions, we expect the parallel OCC scheme 
+The optimal workload would be to use the serial OCC scheme in a situation where there are multiple short duration transactions and to switch to a parallel scheme when the average transaction duration increase above a set threshold, to be determined by performance tuning on the given system.
