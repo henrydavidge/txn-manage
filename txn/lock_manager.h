@@ -29,7 +29,12 @@ enum LockMode {
 
 class LockManager {
  public:
-  virtual ~LockManager() {}
+  virtual ~LockManager() {
+    for (auto it = lock_table_.begin(); it != lock_table_.end(); ++it)
+    {
+      delete it->second;
+    }
+  }
 
   // Attempts to grant a read lock to the specified transaction, enqueueing
   // request in lock table. Returns true if lock is immediately granted, else

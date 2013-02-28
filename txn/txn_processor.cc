@@ -160,49 +160,45 @@ void TxnProcessor::RunOCCScheduler() {
   Txn *txn;
   bool valid;
   while (tp_.Active()) {
-    //Start a txn
-    if (txn_requests_.Pop(&txn))
-    {
+    // Start a txn
+    if (txn_requests_.Pop(&txn)) {
       txn->occ_start_time_ = GetTime();
       tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
         this, &TxnProcessor::ExecuteTxn, txn));
     }
 
-    while (completed_txns_.Pop(&txn))
-    {
-      valid = true;
-      for (set<Key>::iterator it = txn->readset_.begin();
-        it != txn->readset_.end(); ++it)
-      {
-        if (storage_.Timestamp(*it) >= txn->occ_start_time_)
-        {
-          valid = false;
-          goto JUMPTRADING;
-        }
-      }
-
-      for (set<Key>::iterator it = txn->writeset_.begin();
-        it != txn->writeset_.end(); ++it)
-      {
-        if (storage_.Timestamp(*it) >= txn->occ_start_time_)
-        {
-          valid = false;
-          goto JUMPTRADING;
-        }
-      }
-
-      if (valid)
-      {
-        ApplyWrites(txn);
-        txn->status_ = COMMITTED;
+    while (completed_txns_.Pop(&txn)) {
+      if (txn->status_ == COMPLETED_A) {
+        txn->status_ = ABORTED;
         txn_results_.Push(txn);
-      }
-      else
-      {
-        JUMPTRADING:
-        txn->occ_start_time_ = GetTime();
-        tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
-          this, &TxnProcessor::ExecuteTxn, txn));
+      } else {
+        valid = true;
+        for (set<Key>::iterator it = txn->readset_.begin();
+          it != txn->readset_.end(); ++it) {
+          if (storage_.Timestamp(*it) >= txn->occ_start_time_) {
+            valid = false;
+            goto JUMPTRADING;
+          }
+        }
+
+        for (set<Key>::iterator it = txn->writeset_.begin();
+          it != txn->writeset_.end(); ++it) {
+          if (storage_.Timestamp(*it) >= txn->occ_start_time_) {
+            valid = false;
+            goto JUMPTRADING;
+          }
+        }
+
+        if (valid) {
+          ApplyWrites(txn);
+          txn->status_ = COMMITTED;
+          txn_results_.Push(txn);
+        } else {
+          JUMPTRADING:
+          txn->occ_start_time_ = GetTime();
+          tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
+            this, &TxnProcessor::ExecuteTxn, txn));
+        }
       }
     }
   }
@@ -221,9 +217,8 @@ void TxnProcessor::RunOCCParallelScheduler() {
   Txn *txn;
   set<Txn*> active_set;
   while (tp_.Active()) {
-    //Start a txn
-    if (txn_requests_.Pop(&txn))
-    {
+    // Start a txn
+    if (txn_requests_.Pop(&txn)) {
       txn->occ_start_time_ = GetTime();
       tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
         this, &TxnProcessor::ExecuteTxn, txn));
@@ -232,24 +227,25 @@ void TxnProcessor::RunOCCParallelScheduler() {
     //Attempt to validate txns
     // std::cout << "Here1" << std::endl;
     int i = 0, j = 0;
-    while(i++ < n && completed_txns_.Pop(&txn))
-    {
-      active_set = txn_active_set_.GetSet();
-      txn_active_set_.Insert(txn);
-      tp_.RunTask(new Method<TxnProcessor, void, Txn*, set<Txn*>>(
-        this, &TxnProcessor::ValidateOCCP, txn, active_set));
+    while(i++ < n && completed_txns_.Pop(&txn)) {
+      if (txn->status_ == COMPLETED_A) {
+        txn->status_ = ABORTED;
+        txn_results_.Push(txn);
+      } else {
+        active_set = txn_active_set_.GetSet();
+        txn_active_set_.Insert(txn);
+        tp_.RunTask(new Method<TxnProcessor, void, Txn*, set<Txn*>>(
+          this, &TxnProcessor::ValidateOCCP, txn, active_set));
+      }
     }
 
     while(j++ < m && txn_validated_.Pop(&txn))
     {
       txn_active_set_.Erase(txn);
-      if (txn->validated)
-      {
+      if (txn->validated) {
         txn->status_ = COMMITTED;
         txn_results_.Push(txn);
-      }
-      else
-      {
+      } else {
         txn->occ_start_time_ = GetTime();
         tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
           this, &TxnProcessor::ExecuteTxn, txn));
@@ -311,8 +307,8 @@ void TxnProcessor::ValidateOCCP(Txn* txn, set<Txn*> active_set)
   {
     ApplyWrites(txn);
   }
-  txn_validated_.Push(txn);
   txn->validated = valid;
+  txn_validated_.Push(txn);
 }
 
 void TxnProcessor::ExecuteTxn(Txn* txn) {
