@@ -67,6 +67,8 @@ class TxnProcessor {
   // OCC version of scheduler with parallel validation.
   void RunOCCParallelScheduler();
 
+  void ValidateOCCP(Txn* txn, set<Txn*> active_set);
+
   // Performs all reads required to execute the transaction, then executes the
   // transaction logic.
   void ExecuteTxn(Txn* txn);
@@ -107,6 +109,9 @@ class TxnProcessor {
 
   // Lock Manager used for LOCKING concurrency implementations.
   LockManager* lm_;
+
+  AtomicSet<Txn*> txn_active_set_;
+  AtomicQueue<Txn*> txn_validated_;
 };
 
 #endif  // _TXN_PROCESSOR_H_
