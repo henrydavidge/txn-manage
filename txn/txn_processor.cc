@@ -224,23 +224,22 @@ void TxnProcessor::RunOCCParallelScheduler() {
         this, &TxnProcessor::ExecuteTxn, txn));
     }
 
-    //Attempt to validate txns
+    // Attempt to validate txns
     // std::cout << "Here1" << std::endl;
     int i = 0, j = 0;
-    while(i++ < n && completed_txns_.Pop(&txn)) {
+    while (i++ < n && completed_txns_.Pop(&txn)) {
       if (txn->status_ == COMPLETED_A) {
         txn->status_ = ABORTED;
         txn_results_.Push(txn);
       } else {
         active_set = txn_active_set_.GetSet();
         txn_active_set_.Insert(txn);
-        tp_.RunTask(new Method<TxnProcessor, void, Txn*, set<Txn*>>(
+        tp_.RunTask(new Method<TxnProcessor, void, Txn*, set<Txn*> >(
           this, &TxnProcessor::ValidateOCCP, txn, active_set));
       }
     }
 
-    while(j++ < m && txn_validated_.Pop(&txn))
-    {
+    while (j++ < m && txn_validated_.Pop(&txn))     {
       txn_active_set_.Erase(txn);
       if (txn->validated) {
         txn->status_ = COMMITTED;
@@ -255,47 +254,37 @@ void TxnProcessor::RunOCCParallelScheduler() {
 }
 
 
-void TxnProcessor::ValidateOCCP(Txn* txn, set<Txn*> active_set)
-{
+void TxnProcessor::ValidateOCCP(Txn* txn, set<Txn*> active_set) {
   bool valid = true;
   for (set<Key>::iterator it = txn->readset_.begin();
-    it != txn->readset_.end(); ++it)
-  {
-    if (storage_.Timestamp(*it) >= txn->occ_start_time_)
-    {
+    it != txn->readset_.end(); ++it)  {
+    if (storage_.Timestamp(*it) >= txn->occ_start_time_)    {
       valid = false;
       goto JUMPER;
     }
   }
 
   for (set<Key>::iterator it = txn->writeset_.begin();
-    it != txn->writeset_.end(); ++it)
-  {
-    if (storage_.Timestamp(*it) >= txn->occ_start_time_)
-    {
+    it != txn->writeset_.end(); ++it)  {
+    if (storage_.Timestamp(*it) >= txn->occ_start_time_)    {
       valid = false;
       goto JUMPER;
     }
   }
 
   for (set<Txn*>::iterator t = active_set.begin();
-    t != active_set.end(); ++t)
-  {
+    t != active_set.end(); ++t)  {
     for (set<Key>::iterator it = txn->readset_.begin();
-      it != txn->readset_.end(); ++it)
-    {
-      if (storage_.Timestamp(*it) >= txn->occ_start_time_)
-      {
+      it != txn->readset_.end(); ++it)    {
+      if (storage_.Timestamp(*it) >= txn->occ_start_time_)      {
         valid = false;
         goto JUMPER;
       }
     }
 
     for (set<Key>::iterator it = txn->writeset_.begin();
-      it != txn->writeset_.end(); ++it)
-    {
-      if (storage_.Timestamp(*it) >= txn->occ_start_time_)
-      {
+      it != txn->writeset_.end(); ++it)    {
+      if (storage_.Timestamp(*it) >= txn->occ_start_time_)      {
         valid = false;
         goto JUMPER;
       }
@@ -303,8 +292,7 @@ void TxnProcessor::ValidateOCCP(Txn* txn, set<Txn*> active_set)
   }
 
   JUMPER:
-  if (valid)
-  {
+  if (valid)  {
     ApplyWrites(txn);
   }
   txn->validated = valid;
@@ -314,36 +302,33 @@ void TxnProcessor::ValidateOCCP(Txn* txn, set<Txn*> active_set)
 void TxnProcessor::ExecuteTxn(Txn* txn) {
   // Read everything in from readset.
   for (set<Key>::iterator it = txn->readset_.begin();
-   it != txn->readset_.end(); ++it) {
+    it != txn->readset_.end(); ++it) {
     // Save each read result iff record exists in storage.
     Value result;
   if (storage_.Read(*it, &result))
     txn->reads_[*it] = result;
-}
+  }
 
   // Also read everything in from writeset.
-for (set<Key>::iterator it = txn->writeset_.begin();
- it != txn->writeset_.end(); ++it) {
+  for (set<Key>::iterator it = txn->writeset_.begin();
+    it != txn->writeset_.end(); ++it) {
     // Save each read result iff record exists in storage.
-  Value result;
-if (storage_.Read(*it, &result))
-  txn->reads_[*it] = result;
-}
+    Value result;
+    if (storage_.Read(*it, &result))
+      txn->reads_[*it] = result;
+  }
 
   // Execute txn's program logic.
-txn->Run();
+  txn->Run();
 
   // Hand the txn back to the RunScheduler thread.
-completed_txns_.Push(txn);
+  completed_txns_.Push(txn);
 }
 
 void TxnProcessor::ApplyWrites(Txn* txn) {
   // Write buffered writes out to storage.
   for (map<Key, Value>::iterator it = txn->writes_.begin();
-   it != txn->writes_.end(); ++it) {
+    it != txn->writes_.end(); ++it) {
     storage_.Write(it->first, it->second);
 }
-
-  // Set status to committed.
-
 }

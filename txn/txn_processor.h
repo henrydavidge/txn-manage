@@ -7,6 +7,7 @@
 #include <deque>
 #include <map>
 #include <string>
+#include <set>
 
 #include "txn/common.h"
 #include "txn/lock_manager.h"

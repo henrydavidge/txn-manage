@@ -76,7 +76,9 @@ obj/txn/txn_processor.o: txn/txn_processor.cc txn/txn_processor.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/c++/4.6/bits/functional_hash.h \
  /usr/include/c++/4.6/bits/hash_bytes.h \
- /usr/include/c++/4.6/bits/basic_string.tcc txn/common.h \
+ /usr/include/c++/4.6/bits/basic_string.tcc /usr/include/c++/4.6/set \
+ /usr/include/c++/4.6/bits/stl_set.h \
+ /usr/include/c++/4.6/bits/stl_multiset.h txn/common.h \
  /usr/include/assert.h /usr/include/sys/time.h \
  /usr/include/c++/4.6/iostream /usr/include/c++/4.6/ostream \
  /usr/include/c++/4.6/ios /usr/include/c++/4.6/bits/ios_base.h \
@@ -108,9 +110,8 @@ obj/txn/txn_processor.o: txn/txn_processor.cc txn/txn_processor.h \
  /usr/include/limits.h /usr/include/bits/posix1_lim.h \
  /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
  /usr/include/bits/posix2_lim.h /usr/include/bits/xopen_lim.h txn/txn.h \
- /usr/include/c++/4.6/set /usr/include/c++/4.6/bits/stl_set.h \
- /usr/include/c++/4.6/bits/stl_multiset.h utils/atomic.h \
- /usr/include/c++/4.6/queue /usr/include/c++/4.6/bits/stl_heap.h \
+ utils/atomic.h /usr/include/c++/4.6/queue \
+ /usr/include/c++/4.6/bits/stl_heap.h \
  /usr/include/c++/4.6/bits/stl_queue.h utils/mutex.h \
  utils/static_thread_pool.h utils/thread_pool.h utils/task.h \
  /usr/include/c++/4.6/cassert /usr/include/c++/4.6/typeinfo

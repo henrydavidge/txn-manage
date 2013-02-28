@@ -30,8 +30,7 @@ enum LockMode {
 class LockManager {
  public:
   virtual ~LockManager() {
-    for (auto it = lock_table_.begin(); it != lock_table_.end(); ++it)
-    {
+    for (auto it = lock_table_.begin(); it != lock_table_.end(); ++it) {
       delete it->second;
     }
   }
