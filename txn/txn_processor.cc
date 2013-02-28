@@ -166,9 +166,6 @@ void TxnProcessor::RunOCCScheduler() {
         this, &TxnProcessor::ExecuteTxn, txn));
     }
 
-    //Attempt to validate txns
-    // std::cout << "Here1" << std::endl;
-
     while (completed_txns_.Pop(&txn))
     {
       valid = true;
@@ -180,7 +177,6 @@ void TxnProcessor::RunOCCScheduler() {
           valid = false;
         }
       }
-      // std::cout << "Here2" << std::endl;
 
       for (set<Key>::iterator it = txn->writeset_.begin();
         it != txn->writeset_.end(); ++it)
@@ -190,7 +186,6 @@ void TxnProcessor::RunOCCScheduler() {
           valid = false;
         }
       }
-      // std::cout << "Here3" << std::endl;
 
       if (valid)
       {
