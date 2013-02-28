@@ -180,6 +180,7 @@ void TxnProcessor::RunOCCScheduler() {
         if (storage_.Timestamp(*it) >= txn->occ_start_time_)
         {
           valid = false;
+          goto JUMPTRADING;
         }
       }
       // std::cout << "Here2" << std::endl;
@@ -190,6 +191,7 @@ void TxnProcessor::RunOCCScheduler() {
         if (storage_.Timestamp(*it) >= txn->occ_start_time_)
         {
           valid = false;
+          goto JUMPTRADING;
         }
       }
       // std::cout << "Here3" << std::endl;
@@ -202,6 +204,7 @@ void TxnProcessor::RunOCCScheduler() {
       }
       else
       {
+        JUMPTRADING:
         txn->occ_start_time_ = GetTime();
         tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
           this, &TxnProcessor::ExecuteTxn, txn));
