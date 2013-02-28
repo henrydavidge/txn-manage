@@ -155,16 +155,56 @@ void TxnProcessor::RunLockingScheduler() {
 }
 
 void TxnProcessor::RunOCCScheduler() {
-  // CPSC 438/538:
-  //
-  // Implement this method! Note that implementing OCC may require
-  // modifications to the Storage engine (and therefore to the 'ExecuteTxn'
-  // method below).
-  //
-  // [For now, run serial scheduler in order to make it through the test
-  // suite]
+  Txn *txn;
+  bool valid;
+  while (tp_.Active()) {
+    //Start a txn
+    if (txn_requests_.Pop(&txn))
+    {
+      txn->occ_start_time_ = GetTime();
+      tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
+        this, &TxnProcessor::ExecuteTxn, txn));
+    }
 
-  RunSerialScheduler();
+    //Attempt to validate txns
+    // std::cout << "Here1" << std::endl;
+
+    while (completed_txns_.Pop(&txn))
+    {
+      valid = true;
+      for (set<Key>::iterator it = txn->readset_.begin();
+        it != txn->readset_.end(); ++it)
+      {
+        if (storage_.Timestamp(*it) >= txn->occ_start_time_)
+        {
+          valid = false;
+        }
+      }
+      // std::cout << "Here2" << std::endl;
+
+      for (set<Key>::iterator it = txn->writeset_.begin();
+        it != txn->writeset_.end(); ++it)
+      {
+        if (storage_.Timestamp(*it) >= txn->occ_start_time_)
+        {
+          valid = false;
+        }
+      }
+      // std::cout << "Here3" << std::endl;
+
+      if (valid)
+      {
+        ApplyWrites(txn);
+        txn_results_.Push(txn);
+      }
+      else
+      {
+        txn->occ_start_time_ = GetTime();
+        tp_.RunTask(new Method<TxnProcessor, void, Txn*>(
+          this, &TxnProcessor::ExecuteTxn, txn));
+      }
+    }
+  }
 }
 
 void TxnProcessor::RunOCCParallelScheduler() {
