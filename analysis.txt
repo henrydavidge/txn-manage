@@ -46,13 +46,27 @@ specified unit of time and using up certain resources (threads from the thread
 pool, locks from the lock manager, etc.)
 This is not a good approximation because the thread sleep times are clustered 
 around 4 different sleep times, each 10 times the last. This is not mirrored by 
-real world systems which would have a more continuous distribution of thread run
- times.
-A better approximation would be if the thread sleep-times were to be normally 
-distributed around a mean value, and if the means and the standard deviations 
-were to be changed for various test cases.
+real world systems which would have a more continuous distribution of thread 
+run times. A better approximation would use either a uniform or normal 
+distribution to select sleep times. A uniform distribution would model a DBMS 
+that accepts many different sorts of transactions, while a normal distrution 
+would resemble a system that generally performs one transaction time. Since in 
+a real system there would be some fluctuations in execution time even for 
+similar transactions, this model would give more accurate results.
 
-3. 
+3. In standard two phase locking, a transaction does not have to acquire and 
+release all of its locks at once. The requirement for two phase locking is less 
+restrictive: a transaction cannot acquire any locks after it has begun 
+releasing them. For this reason, we might expect our locking scheme to perform 
+worse because transactions could be holding locks longer than necessary. 
+However, since our scheme grants or denies locks serially, it is guaranteed to 
+be deadlock free. If two transactions request locks to the same resource, the 
+transaction that started first will acquire the locks first and execute first. 
+So, our method would be better if the performance hit we take by restricting 
+when transactions can acquire locks is less than the cost of deadlock 
+detection. I suspect that our scheme would still perform worse, but it is 
+possible that it would do better if there is high resource contention and lots 
+of dealock.
 
 4. The Serial Optimistic Concurrency Control (OCC) performs better than the 
 Parallel OCC when the average transaction duration is low (i.e., less than 10 
@@ -65,11 +79,22 @@ conflicts between different transactions. Also, transactions just sit around in
 the queue needlessly populating the active set while waiting to get committed. 
 This decreases the throughput. Ain’t nobody got time for that. We can test this 
 by increasing n and noting the increase in throughput of POCC.
-This was unexpected as we expected the parallel version to outperform the serial
- version.
+This was unexpected as we expected the parallel version to outperform the 
+serial version.
 In a real world system with a high volume of long duration transactions, we 
 expect the parallel OCC scheme 
 The optimal workload would be to use the serial OCC scheme in a situation where 
 there are multiple short duration transactions and to switch to a parallel 
 scheme when the average transaction duration increase above a set threshold, to 
 be determined by performance tuning on the given system.
+We used teh pseudo code given in the assignment.
+We used teh values:
+
+5. Serial: p(abort) = 0.65k/(1 + 0.65k)
+
+Parallel: 
+P(abort) =   2d{((49/25)^k)*k - (49/25)^k + 16^k} + ((49/25)^kv
+           --------------------------------------------------------
+	        2d{((49/25)^k)*k + 16^k} + ((49/25)^k)*kv
+
+See derivation.jpg for full derivation.
